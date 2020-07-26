@@ -22,5 +22,6 @@ namespace UTProject
         public abstract string abField { get; set; }
         public virtual string viField { get; set; }
         public override string oviField { get; set; }
+
     }
 }

@@ -1,14 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Natasha.Reflection
 {
-    
+
     public class NMember
     {
+
+        public readonly NParameter[] Parameters;
+        public readonly NParameter ReturnParameter;
         public readonly bool CanWrite;
         public readonly bool CanRead;
         public readonly bool IsAsync;
@@ -39,7 +40,9 @@ namespace Natasha.Reflection
             bool isAbstract,
             bool isVirtural,
             bool isNew,
-            bool isOverride)
+            bool isOverride,
+            NParameter[] parameters = null,
+            NParameter returnParameter = null)
             
         {
 
@@ -132,7 +135,9 @@ namespace Natasha.Reflection
                 isAbstract,
                 isVirtual,
                 isNew,
-                isOverride);
+                isOverride,
+                GetParameters(info),
+                GetReturnParameter(info));
 
         }
 
@@ -196,6 +201,60 @@ namespace Natasha.Reflection
             }
 
             return (isAsync, isStatic, isAbstract, isVirtual, isNew, isOverride);
+        }
+
+
+        public static NParameter[] GetParameters(MethodInfo info)
+        {
+            var methodParameters = info.GetParameters();
+            var parameters = new NParameter[methodParameters.Length];
+            for (int i = 0; i < methodParameters.Length; i+=1)
+            {
+
+                NParameter nParameter = new NParameter(
+                    methodParameters[i].IsIn,
+                    methodParameters[i].IsOut,
+                    methodParameters[i].ParameterType.IsByRef,
+                    false,
+                    methodParameters[i].Name,
+                    methodParameters[i].ParameterType
+                    );
+
+                parameters[methodParameters[i].Position] = nParameter;
+            }
+            return parameters;
+        }
+
+
+        public static NParameter GetReturnParameter(MethodInfo info)
+        {
+
+            var parameter = info.ReturnParameter;
+
+#if !NETSTANDARD2_0
+
+             return new NParameter(
+                   parameter.IsIn,
+                   parameter.IsOut,
+                   parameter.ParameterType.IsByRef,
+                   parameter.GetCustomAttribute<IsReadOnlyAttribute>() != default,
+                   parameter.Name,
+                   parameter.ParameterType
+                   );
+
+#else
+
+            return new NParameter(
+                   parameter.IsIn,
+                   parameter.IsOut,
+                   parameter.ParameterType.IsByRef,
+                   false,
+                   parameter.Name,
+                   parameter.ParameterType
+                   );
+
+#endif
+
         }
     }
 }
